@@ -37,12 +37,7 @@ def main():
     
     patientBarcode = list(df["patient.bcr_patient_barcode"])
     
-    patientDead = list()
-    for daysToDeath in daysToDeathList:
-        if daysToDeath > 0:
-            patientDead.append(1)
-        else:
-            patientDead.append(0)
+    patientDead = [1 if daysToDeath > 0 else 0 for daysToDeath in daysToDeathList]
 
     data = {
         "patient_barcode": patientBarcode,
