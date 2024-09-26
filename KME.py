@@ -1,7 +1,7 @@
 from lifelines import KaplanMeierFitter
 import matplotlib.pyplot as plt
 
-from main import main as getDf
+from KIRC_clin import main as getDf
 
 df = getDf()
 
@@ -23,3 +23,6 @@ print(kmf.survival_function_)
 print(kmf.cumulative_density_)
 kmf.plot_survival_function()
 plt.savefig('KMC.png')
+
+#Create Kaplan-Meier estimate, plot visualisations
+print(kmf.survival_table_)
