@@ -1,6 +1,2 @@
-raw_data/KIRCRN~1.txt
-raw_data/KIRC.clin.merged.txt
-
-processed_data/KIRC_RSEM.csv
-processed_data/KIRC_clinical.csv
-processed_data/KIRC_merged_clin_RSEM.csv
+*.csv
+*.txt
