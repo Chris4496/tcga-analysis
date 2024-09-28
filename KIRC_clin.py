@@ -38,10 +38,18 @@ def main():
     
     patientDead = [1 if daysToDeath > 0 else 0 for daysToDeath in daysToDeathList]
 
+    time_days = list()
+    for index in range(len(patientBarcode)):
+        # check which value is greater
+        if daysToDeathList[index] > daysToLastFollowUpList[index]:
+            time_days.append(daysToDeathList[index])
+        else:
+            time_days.append(daysToLastFollowUpList[index])
+
+
     data = {
         "patient_barcode": patientBarcode,
-        "days_to_death": daysToDeathList,
-        "days_to_last_followup": daysToLastFollowUpList,
+        "time_days": time_days,
         "patient_dead": patientDead
     }
     compiledDf = pd.DataFrame(data=data)

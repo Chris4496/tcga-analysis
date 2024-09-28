@@ -5,13 +5,7 @@ from KIRC_clin import main as getDf
 
 df = getDf()
 
-T = list()
-for index, row in df.iterrows():
-    if row["patient_dead"] == 1:
-        time = row["days_to_death"]
-    else:
-        time = row["days_to_last_followup"]
-    T.append(time)
+T = list(df["time_days"])
 
 E = list(df["patient_dead"])
 
@@ -22,7 +16,4 @@ kmf.fit(T, E)
 print(kmf.survival_function_)
 print(kmf.cumulative_density_)
 kmf.plot_survival_function()
-plt.savefig('KMC.png')
-
-#Create Kaplan-Meier estimate, plot visualisations
-print(kmf.survival_table_)
+plt.savefig('KMC2.png')
