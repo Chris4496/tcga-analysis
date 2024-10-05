@@ -7,10 +7,6 @@ from pickle import dump
 def main():
     # read the data
     merged = pd.read_csv("processed_data/KIRC_merged_clin_RSEM.csv")
-    
-    # get shape
-    shape = merged.shape
-    print(shape)
 
     # extract and remove the 'patient_barcode' column
     patientBarcode = merged['patient_barcode']
@@ -19,20 +15,51 @@ def main():
     # remove "gene_id" column
     del merged['gene_id']
 
-    # make new dataframe that contains only the columns of "time_days" and "patient_dead"
-    new = merged[['time_days', 'patient_dead', 'C15orf42|90381', 'CCNF|899', 'DONSON|29980', 'DVL3|1857', 'POFUT2|23275']]
+    # remove columns that the values are all constant
+    constant_columns = [col for col in merged.columns if merged[col].nunique() <= 1]
+    print(f"Constant columns: {constant_columns}")
+    merged = merged.drop(columns=constant_columns)
 
+    # remove columns that have all NA values
+    merged = merged.dropna()
 
-    # initialize cph
-    cph = CoxPHFitter()
-    cph.fit(new, duration_col="time_days", event_col="patient_dead")
+    # seperate predictor and outcome
+    predictors = merged.drop(columns=['patient_dead', 'time_days'])
+    outcome = merged[['patient_dead', 'time_days']]
 
-    # save cph
+    # a list to store the results
+    univariate_results = []
+
+    # progess counter
+    gene_counter = 0
+    total = len(predictors.columns)
+
+    # loop through each gene
+    for gene in predictors.columns:
+        # indicate progress
+        print(f"Progress: {gene_counter} / {total}, -> Fitting {gene}")
+
+        # create new df that have the nessecary columns
+        temp_df = pd.DataFrame({
+            'T': outcome['time_days'],
+            'E': outcome['patient_dead'],
+            gene: predictors[gene]
+        })
+        
+        # fit univariate model
+        cph = CoxPHFitter(penalizer=0.1)
+        cph.fit(temp_df, duration_col="T", event_col="E")
+
+        # store results
+        univariate_results.append(cph.summary)
+
+        # add counter
+        gene_counter += 1
+        
+    # store results
+    print('Saving results')
     with open('KIRC_cph.pickle', 'wb') as f:
-        dump(cph, f)
-
-    # print summary
-    print(cph.summary)
+        dump(univariate_results, f)
     
 if __name__ == "__main__":
     main()
