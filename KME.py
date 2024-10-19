@@ -1,7 +1,7 @@
 from lifelines import KaplanMeierFitter
 import matplotlib.pyplot as plt
 
-from KIRC_clin import main as getDf
+from preprocessing_util.KIRC_clin import main as getDf
 
 df = getDf()
 

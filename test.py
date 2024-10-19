@@ -1,19 +1,71 @@
 import pandas as pd
 import numpy as np
 from pickle import load, dump
+import matplotlib.pyplot as plt
 
 
 def main():
-    # read the lasso cox regression results
-    with open('result_cache/lasso_cox_regression_top1000.pickle', 'rb') as f:
-        lasso_cox_regression = load(f)
+    # read top 1000 genes
+    with open('result_cache/lasso_cox_regression_top50.pickle', 'rb') as f:
+        lasso_results = load(f)
 
-    lasso_cox_regression_sored = lasso_cox_regression.sort_values(by='-log2(p)', ascending=False)
+    # sort by coef
+    lasso_results_sorted = lasso_results.sort_values(by='p', ascending=True)
 
-    print(lasso_cox_regression_sored.head())
+    # top x
+    top = lasso_results_sorted.head(30)
 
-    print(list(lasso_cox_regression_sored.index))
+    possible_genes = ['C15orf42|90381', 'CCNF|899', 'DONSON|29980', 'DVL3|1857', 'POFUT2|23275']
 
+    # Create the plot
+    plt.figure(figsize=(10, 6))  # Set the figure size
+
+    # Bar plot
+    plt.bar(top.index, top['p'], color='skyblue')
+
+    # Add labels and title
+    plt.xlabel('Gene', fontsize=12)
+    plt.ylabel('Coefficient (coef)', fontsize=12)
+    plt.title('Top 20 Genes by Coefficient', fontsize=14)
+
+    # Rotate x-axis labels for better readability
+    plt.xticks(rotation=90)
+
+    # Show the plot
+    plt.tight_layout()  # Adjust layout to prevent label cutoffs
+    plt.show()
 
 if __name__ == "__main__":
     main()
+
+# def plot_KMC(df, gene_name):
+#     # create new df that have the nessecary columns
+#     new = df[['time_days', 'patient_dead', gene_name]]
+
+#     kmf = KaplanMeierFitter()
+
+#     median_exp = df[gene_name].median()
+#     new['high_exp'] = df[gene_name] > median_exp
+
+#     # fit for low expression
+#     kmf.fit(new[new['high_exp'] == False]['time_days'], new[new['high_exp'] == False]['patient_dead'], label="low_exp")
+#     ax = kmf.plot(ci_show=False)
+
+#     # fit for high expression
+#     kmf.fit(new[new['high_exp'] == True]['time_days'], new[new['high_exp'] == True]['patient_dead'], label="high_exp")
+#     kmf.plot(ax=ax, ci_show=False)
+    
+#     plt.title(f'{gene_name} KMC')
+#     plt.xlabel('Time (days)')
+#     plt.ylabel('Survival probability')
+
+#     # save figure
+#     plt.savefig(f'plot_out/KMC_{gene_name.replace("|", "_")}.png')
+#     plt.close()
+
+#     # show figure
+#     # plt.show()
+
+#     # # reset figure
+#     # plt.clf()
+#     # plt.close()
