@@ -1,9 +1,8 @@
 from lifelines import KaplanMeierFitter
 import matplotlib.pyplot as plt
+import pandas as pd
 
-from preprocessing_util.KIRC_clin import main as getDf
-
-df = getDf()
+df = pd.read_csv("data/processed/KIRC_merged_clin_RSEM.csv")
 
 T = list(df["time_days"])
 
@@ -16,4 +15,5 @@ kmf.fit(T, E)
 print(kmf.survival_function_)
 print(kmf.cumulative_density_)
 kmf.plot_survival_function()
-plt.savefig('KMC2.png')
+# plt.savefig('KMC2.png')
+plt.show()

@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tcga-analysis"
+version = "0.1.0"
+description = "tcga cancer data analysis"
+authors = ["Chris4496 <62294842+Chris4496@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "tcga_analysis"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.3"
+matplotlib = "^3.9.2"
+lifelines = "^0.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

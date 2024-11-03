@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 
 def main():
     # read top 1000 genes
-    with open('result_cache/lasso_cox_regression_top50.pickle', 'rb') as f:
-        lasso_results = load(f)
+    with open('models/cox_ph_top30_penalty1_l1_ratio0.5.pkl', 'rb') as f:
+        cph = load(f)
+
+    lasso_results = cph.summary
 
     # sort by coef
-    lasso_results_sorted = lasso_results.sort_values(by='p', ascending=True)
+    lasso_results_sorted = lasso_results.sort_values(by='coef', ascending=True)
 
     # top x
     top = lasso_results_sorted.head(30)
