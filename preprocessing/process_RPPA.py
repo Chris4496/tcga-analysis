@@ -26,6 +26,10 @@ def process_rppa_data_from_raw(retrieve_from_cache=True):
 
     df = df.drop(df.index[0])
 
+    # For the column "patient_barcode", we only need the first 12 characters
+    df['patient_barcode'] = df['patient_barcode'].str[:12]
+
+    df.reset_index(drop=True, inplace=True)
     
     # save to cache (include date time)
     with open(f'cache/KIRC_rppa_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:

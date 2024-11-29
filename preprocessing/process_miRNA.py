@@ -2,6 +2,7 @@ import pandas as pd
 import pickle
 import time
 import os
+from sklearn.impute import KNNImputer
 
 def process_mirna_data_from_raw(retrieve_from_cache=True):
     if retrieve_from_cache:
@@ -26,7 +27,32 @@ def process_mirna_data_from_raw(retrieve_from_cache=True):
 
     df = df.drop(df.index[0])
 
+    df.reset_index(drop=True, inplace=True)
+
+    # For the column "patient_barcode", we only need the first 12 characters
+    df['patient_barcode'] = df['patient_barcode'].str[:12]
+
+    df.reset_index(drop=True, inplace=True)
+
+    # Or remove microRNAs with >30% missing values
+    threshold = 30
+    df = df.loc[:, df.isnull().mean() * 100 < threshold]
+
+    patient_barcode = df['patient_barcode']
+
+    data_for_imputation = df.drop('patient_barcode', axis=1)
     
+    # Impute missing values with KNN
+    imputer = KNNImputer(n_neighbors=5)
+    imputed_data = imputer.fit_transform(data_for_imputation)
+
+    # Convert back to DataFrame with column names
+    df = pd.DataFrame(imputed_data, columns=data_for_imputation.columns)
+
+    # Add back the patient_barcode column
+    df.insert(0, 'patient_barcode', patient_barcode)
+    
+
     # save to cache (include date time)
     with open(f'cache/KIRC_mirna_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(df, f)
