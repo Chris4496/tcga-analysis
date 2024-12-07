@@ -31,6 +31,9 @@ def process_rsem_data_from_raw(retrieve_from_cache=True):
 
     df.reset_index(drop=True, inplace=True)
 
+    # delete duplicate rows
+    df = df.drop_duplicates(subset=['patient_barcode'], keep="last")
+
     # save to cache (include date time)
     with open(f'cache/KIRC_RSEM_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(df, f)

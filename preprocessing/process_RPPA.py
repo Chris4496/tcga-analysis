@@ -30,10 +30,14 @@ def process_rppa_data_from_raw(retrieve_from_cache=True):
     df['patient_barcode'] = df['patient_barcode'].str[:12]
 
     df.reset_index(drop=True, inplace=True)
+
+    # delete duplicate rows
+    df = df.drop_duplicates(subset=['patient_barcode'], keep="last")
     
     # save to cache (include date time)
     with open(f'cache/KIRC_rppa_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(df, f)
+
 
     return df
 

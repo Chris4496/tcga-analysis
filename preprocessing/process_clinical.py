@@ -99,6 +99,9 @@ def process_clinical_data_from_raw(retrieve_from_cache=True):
     # rename columns
     df.columns = ['patient_barcode', 'dead', 'time(day)']
 
+    # delete duplicate rows
+    df = df.drop_duplicates(subset=['patient_barcode'], keep="last")
+
     # save to cache (include date time)
     with open(f'cache/KIRC_clinical_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(df, f)
@@ -110,4 +113,5 @@ def process_clinical_data_from_raw(retrieve_from_cache=True):
 
 if __name__ == "__main__":
     df = process_clinical_data_from_raw()
+    print(df.shape)
     print(df.head(20))

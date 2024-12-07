@@ -52,10 +52,13 @@ def process_mirna_data_from_raw(retrieve_from_cache=True):
     # Add back the patient_barcode column
     df.insert(0, 'patient_barcode', patient_barcode)
     
+    # delete duplicate rows
+    df = df.drop_duplicates(subset=['patient_barcode'], keep="last")
 
     # save to cache (include date time)
     with open(f'cache/KIRC_mirna_processed_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(df, f)
+
 
     return df
 
