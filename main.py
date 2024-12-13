@@ -159,7 +159,7 @@ def main():
     coefficients_elastic_net = pd.DataFrame(
     cox_elastic_net.coef_, index=Xt.columns, columns=np.round(cox_elastic_net.alphas_, 5))
 
-    plot_coefficients(coefficients_elastic_net, n_highlight=5)
+    # plot_coefficients(coefficients_elastic_net, n_highlight=5)
 
     # choosing alphas
     coxnet_pipe = make_pipeline(StandardScaler(), CoxnetSurvivalAnalysis(l1_ratio=0.9, alpha_min_ratio=0.01, max_iter=100))
@@ -193,7 +193,7 @@ def main():
     ax.axhline(0.5, color="grey", linestyle="--")
     ax.grid(True)
 
-    fig.show()
+    plt.savefig("concordance_index.png")
 
 
         
