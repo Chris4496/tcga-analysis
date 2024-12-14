@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 import pickle
+import time
+import os
 
 # import functions
 from preprocessing.process_clinical import process_clinical_data_from_raw
@@ -167,6 +169,7 @@ def main():
     warnings.simplefilter("ignore", FitFailedWarning)
     coxnet_pipe.fit(Xt, y)
 
+
     estimated_alphas = coxnet_pipe.named_steps["coxnetsurvivalanalysis"].alphas_
     cv = KFold(n_splits=5, shuffle=True, random_state=0)
     gcv = GridSearchCV(
@@ -174,10 +177,14 @@ def main():
         param_grid={"coxnetsurvivalanalysis__alphas": [[v] for v in estimated_alphas]},
         cv=cv,
         error_score=0.5,
-        n_jobs=1,
+        n_jobs=-1,
     ).fit(Xt, y)
 
     cv_results = pd.DataFrame(gcv.cv_results_)
+
+    # save gcv to cache
+    with open(f'cache/gcv_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
+        pickle.dump(gcv, f)
 
     alphas = cv_results.param_coxnetsurvivalanalysis__alphas.map(lambda x: x[0])
     mean = cv_results.mean_test_score
