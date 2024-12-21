@@ -2,28 +2,21 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-import pickle
-import time
-import os
 
 # import functions
-from preprocessing.process_clinical import process_clinical_data_from_raw
-from preprocessing.process_RSEM import process_rsem_data_from_raw
-from preprocessing.process_copyno import process_copyno_data_from_raw
-from preprocessing.process_miRNA import process_mirna_data_from_raw
-from preprocessing.process_RPPA import process_rppa_data_from_raw
-from CoxUniScreening import cox_univariate_screening
-from CoxUniScreening import extract_top_features
+from preprocessing import process_clinical_data_from_raw, process_rsem_data_from_raw, process_copyno_data_from_raw, process_mirna_data_from_raw, process_rppa_data_from_raw
+from weight_selection import cox_lasso_group_weight_selection
+from coxnet_alpha_selection import cross_valaidate_coxnet, get_top_x_features_name
+from cox_univariate_screening import cox_univariate_screening
+from cox_univariate_screening import extract_top_features
+from graph_plotting_script import c_index_vs_alpha_parameter_tuning_plot, top_features_plot, kaplan_meier_plot, penalty_factors_plot
 
 # import models
-from sksurv.linear_model import CoxnetSurvivalAnalysis
 from sklearn.impute import KNNImputer
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.exceptions import FitFailedWarning
-from sklearn.model_selection import GridSearchCV, KFold
-from pprint import pprint
 
+
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.simplefilter("ignore", UserWarning)
 
 def plot_coefficients(coefs, n_highlight):
     _, ax = plt.subplots(figsize=(9, 6))
@@ -44,29 +37,6 @@ def plot_coefficients(coefs, n_highlight):
     ax.set_ylabel("coefficient")
 
     plt.show()
-
-def custom_penalizer(feature_range, penalties):
-    # create custom penalizer
-    alpha = np.zeros(feature_range[-1])
-
-    # for feature 0-500 have penalty of 0.1
-    for i in range(feature_range[0], feature_range[1]):
-        alpha[i] = penalties[0]
-
-    # for feature 500-1000 have penalty of 0.5
-    for i in range(feature_range[1], feature_range[2]):
-        alpha[i] = penalties[1]
-
-    # for feature 1507-1638 have penalty of 0.3
-    for i in range(feature_range[2], feature_range[3]):
-        alpha[i] = penalties[2]
-
-    # for feature 1638-2000 have penalty of 0.4
-    for i in range(feature_range[3], feature_range[4]):
-        alpha[i] = penalties[3]
-
-    return alpha
-
 
 def main():
     clin = process_clinical_data_from_raw()
@@ -152,57 +122,43 @@ def main():
     y = np.array(list(zip(df['dead'], df['time(day)'])), 
                  dtype=[('dead', bool), ('time(day)', float)])
     
-    # fit cox elastic net model
-    cox_elastic_net = CoxnetSurvivalAnalysis(l1_ratio=0.9, alpha_min_ratio=0.01)
+    group_indices = {
+        'RSEM': range(0, 500),
+        'COPYNO': range(500, 1000),
+        'miRNA': range(1000, 1507),
+        'RPPA': range(1507, 1638),
+    }
+    
+    # fit adaptive cox lasso model
+    weights, group_specific_weights = cox_lasso_group_weight_selection(
+        Xt.values, y, group_indices, group_weights=None
+    )
 
-    cox_elastic_net.fit(Xt, y)
+    print(pd.unique(weights))
 
-    # find out selected features
-    coefficients_elastic_net = pd.DataFrame(
-    cox_elastic_net.coef_, index=Xt.columns, columns=np.round(cox_elastic_net.alphas_, 5))
-
-    # plot_coefficients(coefficients_elastic_net, n_highlight=5)
-
-    # choosing alphas
-    coxnet_pipe = make_pipeline(StandardScaler(), CoxnetSurvivalAnalysis(l1_ratio=0.9, alpha_min_ratio=0.01, max_iter=100))
-    warnings.simplefilter("ignore", UserWarning)
-    warnings.simplefilter("ignore", FitFailedWarning)
-    coxnet_pipe.fit(Xt, y)
-
-
-    estimated_alphas = coxnet_pipe.named_steps["coxnetsurvivalanalysis"].alphas_
-    cv = KFold(n_splits=5, shuffle=True, random_state=0)
-    gcv = GridSearchCV(
-        make_pipeline(StandardScaler(), CoxnetSurvivalAnalysis(l1_ratio=0.9)),
-        param_grid={"coxnetsurvivalanalysis__alphas": [[v] for v in estimated_alphas]},
-        cv=cv,
-        error_score=0.5,
-        n_jobs=-1,
-    ).fit(Xt, y)
+    # cross validate coxnet model
+    gcv = cross_valaidate_coxnet(Xt, y, weights)
 
     cv_results = pd.DataFrame(gcv.cv_results_)
 
-    # save gcv to cache
-    with open(f'cache/gcv_{time.strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
-        pickle.dump(gcv, f)
+    # plot penalty factors
+    penalty_factors_plot(group_indices, weights, show_plot=False, output_path="output/penalty_factors_plot.png")
 
-    alphas = cv_results.param_coxnetsurvivalanalysis__alphas.map(lambda x: x[0])
-    mean = cv_results.mean_test_score
-    std = cv_results.std_test_score
+    # plot c-index vs alpha parameter tuning plot
+    c_index_vs_alpha_parameter_tuning_plot(cv_results, gcv, show_plot=False, output_path="output/alpha_tuning_plot.png")
 
-    fig, ax = plt.subplots(figsize=(9, 6))
-    ax.plot(alphas, mean)
-    ax.fill_between(alphas, mean - std, mean + std, alpha=0.15)
-    ax.set_xscale("log")
-    ax.set_ylabel("concordance index")
-    ax.set_xlabel("alpha")
-    ax.axvline(gcv.best_params_["coxnetsurvivalanalysis__alphas"][0], c="C1")
-    ax.axhline(0.5, color="grey", linestyle="--")
-    ax.grid(True)
+    # plot top features
+    top_features_plot(gcv, Xt, show_plot=False, output_path="output/top_features_plot.png")
+    
+    # get top 10 features
+    top_features = get_top_x_features_name(gcv, Xt, 20)
 
-    plt.savefig("concordance_index.png")
-
-
+    # plot kaplan meier plot
+    for feature in top_features:
+        kaplan_meier_plot(df, "time(day)", "dead", feature, show_plot=False, output_path=f"output/KMC_{feature}.png")
+        
+    
+   
         
 if __name__ == "__main__":
     main()
