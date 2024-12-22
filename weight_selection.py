@@ -59,7 +59,7 @@ def cox_lasso_group_weight_selection(X, y, group_indices, group_weights=None, ga
     X_scaled = scaler.fit_transform(X)
     
     # Step 2: Initial Cox regression without penalty
-    initial_model = CoxPHSurvivalAnalysis(alpha=0.1)
+    initial_model = CoxPHSurvivalAnalysis(alpha=0.01)
     initial_model.fit(X_scaled, y)
 
     
@@ -96,6 +96,7 @@ def cox_lasso_group_weight_selection(X, y, group_indices, group_weights=None, ga
                                                   
         # Assign to overall weights array
         weights[indices] = group_adaptive_weights
+
     
     # Normalize weights to sum to number of features
     weights = weights * n_features / np.sum(weights)

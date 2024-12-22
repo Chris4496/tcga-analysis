@@ -13,30 +13,11 @@ from graph_plotting_script import c_index_vs_alpha_parameter_tuning_plot, top_fe
 
 # import models
 from sklearn.impute import KNNImputer
+from sklearn.model_selection import train_test_split
 
 
-warnings.filterwarnings('ignore', category=FutureWarning)
-warnings.simplefilter("ignore", UserWarning)
-
-def plot_coefficients(coefs, n_highlight):
-    _, ax = plt.subplots(figsize=(9, 6))
-    alphas = coefs.columns
-    for row in coefs.itertuples():
-        ax.semilogx(alphas, row[1:], ".-", label=row.Index)
-
-    alpha_min = alphas.min()
-    top_coefs = coefs.loc[:, alpha_min].map(abs).sort_values().tail(n_highlight)
-    for name in top_coefs.index:
-        coef = coefs.loc[name, alpha_min]
-        plt.text(alpha_min, coef, name + "   ", horizontalalignment="right", verticalalignment="center")
-
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-    ax.grid(True)
-    ax.set_xlabel("alpha")
-    ax.set_ylabel("coefficient")
-
-    plt.show()
+# warnings.filterwarnings('ignore', category=FutureWarning)
+# warnings.simplefilter("ignore", UserWarning)
 
 def main():
     clin = process_clinical_data_from_raw()
@@ -59,8 +40,8 @@ def main():
 
 
     # run cox univariate screening
-    rsem_screening_result = cox_univariate_screening(rsem, clin, "KIRC_RSEM")
-    copyno_screening_result = cox_univariate_screening(copyno, clin, "KIRC_COPYNO")
+    rsem_screening_result = cox_univariate_screening(rsem, clin)
+    copyno_screening_result = cox_univariate_screening(copyno, clin)
 
     # extract top 500 features
     rsem_top500 = extract_top_features(rsem, rsem_screening_result, top=500)
@@ -122,6 +103,9 @@ def main():
     y = np.array(list(zip(df['dead'], df['time(day)'])), 
                  dtype=[('dead', bool), ('time(day)', float)])
     
+    # split data into training and testing
+    Xt_train, Xt_test, y_train, y_test = train_test_split(Xt, y, test_size=0.2, random_state=42)
+    
     group_indices = {
         'RSEM': range(0, 500),
         'COPYNO': range(500, 1000),
@@ -137,7 +121,7 @@ def main():
     print(pd.unique(weights))
 
     # cross validate coxnet model
-    gcv = cross_valaidate_coxnet(Xt, y, weights)
+    gcv = cross_valaidate_coxnet(Xt_train, y_train, weights)
 
     cv_results = pd.DataFrame(gcv.cv_results_)
 
@@ -156,6 +140,10 @@ def main():
     # plot kaplan meier plot
     for feature in top_features:
         kaplan_meier_plot(df, "time(day)", "dead", feature, show_plot=False, output_path=f"output/KMC_{feature}.png")
+
+    # test the model
+    test_score = gcv.score(Xt_test, y_test)
+    print(f"Test score: {test_score}")
         
     
    
