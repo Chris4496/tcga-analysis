@@ -120,7 +120,7 @@ def main():
 
     print(pd.unique(weights))
 
-    # cross validate coxnet model
+    # cross validate weightedcoxnet model
     gcv = cross_valaidate_coxnet(Xt_train, y_train, weights)
 
     cv_results = pd.DataFrame(gcv.cv_results_)
@@ -134,15 +134,31 @@ def main():
     # plot top features
     top_features_plot(gcv, Xt, show_plot=False, output_path="output/top_features_plot.png")
     
-    # get top 10 features
+    # get top 20 features
     top_features = get_top_x_features_name(gcv, Xt, 20)
 
     # plot kaplan meier plot
     for feature in top_features:
-        kaplan_meier_plot(df, "time(day)", "dead", feature, show_plot=False, output_path=f"output/KMC_{feature}.png")
+        kaplan_meier_plot(df, "time(day)", "dead", feature, show_plot=False, output_path=f"output/KMCs/KMC_{feature}.png")
 
     # test the model
     test_score = gcv.score(Xt_test, y_test)
+    print(f"Test score: {test_score}")
+
+    # Cross validate unweighted coxnet model
+    gcv_unweighted = cross_valaidate_coxnet(Xt_train, y_train, None)
+
+    # plot c-index vs alpha parameter tuning plot
+    c_index_vs_alpha_parameter_tuning_plot(pd.DataFrame(gcv_unweighted.cv_results_), gcv_unweighted, show_plot=False, output_path="output/alpha_tuning_plot_unweighted.png")
+
+    # plot top features
+    top_features_plot(gcv_unweighted, Xt, show_plot=False, output_path="output/top_features_plot_unweighted.png")
+
+    # get top 20 features
+    top_features = get_top_x_features_name(gcv_unweighted, Xt, 20)
+
+    # test the model
+    test_score = gcv_unweighted.score(Xt_test, y_test)
     print(f"Test score: {test_score}")
         
     
