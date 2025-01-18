@@ -3,7 +3,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV, KFold
 import pandas as pd
-from caching_script import cache_result
+from utils.caching_script import cache_result
 
 @cache_result(verbose=2)
 def cross_valaidate_coxnet(Xt, y, weights):

@@ -1,7 +1,7 @@
 import pandas as pd
 from lifelines import CoxPHFitter
 from lifelines.exceptions import ConvergenceError
-from caching_script import cache_result
+from utils.caching_script import cache_result
 
 @cache_result(verbose=2)
 def cox_univariate_screening(df, clin):

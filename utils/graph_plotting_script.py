@@ -86,7 +86,8 @@ def kaplan_meier_plot(data, time_col, event_col, feature_name, show_plot=True, o
     Returns:
     None
     """
-    
+
+
     # Calculate quartile thresholds
     q1, q2, q3 = np.percentile(data[feature_name], [25, 50, 75])
     
@@ -109,12 +110,15 @@ def kaplan_meier_plot(data, time_col, event_col, feature_name, show_plot=True, o
         (q3_group, f"Q3 ({q2:.2f} < {feature_name} ≤ {q3:.2f})"),
         (q4_group, f"Q4 ({feature_name} > {q3:.2f})")
     ]):
-        # Calculate KM estimate with confidence intervals
-        time, survival, conf_int = kaplan_meier_estimator(
-            event=group[event_col].astype(bool),  # sksurv expects boolean
-            time_exit=group[time_col],
-            conf_type="log-log"
-        )
+        try:
+            # Calculate KM estimate with confidence intervals
+            time, survival, conf_int = kaplan_meier_estimator(
+                event=group[event_col].astype(bool),  # sksurv expects boolean
+                time_exit=group[time_col],
+                conf_type="log-log"
+            )
+        except ValueError:
+            return
         
         # Plot survival curve
         plt.step(time, survival, where="post", color=colors[idx], label=label)

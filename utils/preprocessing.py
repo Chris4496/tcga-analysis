@@ -4,7 +4,7 @@ import functools
 import os
 import hashlib
 import pickle
-from caching_script import cache_result
+from utils.caching_script import cache_result
 
 
 @cache_result(verbose=0)
@@ -126,5 +126,8 @@ def process_rsem_data_from_raw():
 
     # delete duplicate rows
     df = df.drop_duplicates(subset=['patient_barcode'], keep="last")
+
+    # remove "C1orf94" column
+    # df = df.drop(columns=['C1orf94'])
 
     return df

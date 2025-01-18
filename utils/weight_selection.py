@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
-from caching_script import cache_result
+from utils.caching_script import cache_result
 
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 from sklearn.preprocessing import StandardScaler
